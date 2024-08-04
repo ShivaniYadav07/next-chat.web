@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Input } from "antd";
 import "antd/dist/antd.css";
 import "font-awesome/css/font-awesome.min.css";
@@ -17,6 +17,7 @@ function ChatRoom({ username, id }) {
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
   const [users, setUsers] = useState([]);
+  const welcomeRef = useRef();
   const io = socket("http://localhost:1337");//Connecting to Socket.io backend
   let welcome;
   useEffect(() => {
@@ -28,7 +29,7 @@ function ChatRoom({ username, id }) {
         user: data.user,
         message: data.text,
       };
-      welcome = welcomeMessage;
+      welcomeRef.current = welcomeMessage;
       setMessages([welcomeMessage]);//Storing the Welcome Message
       await fetch("http://localhost:1337/api/messages")//Fetching all messages from Strapi
         .then(async (res) => {
@@ -58,7 +59,7 @@ function ChatRoom({ username, id }) {
         setUsers(await e.json());//Fetching and storing the users in the users state variable
       });
     })
-  }, [username]);
+  }, [username, io, welcome]);
   const sendMessage = (message) => {
     if (message) {
       io.emit("sendMessage", { message, user: username }, (error) => {// Sending the message to the backend

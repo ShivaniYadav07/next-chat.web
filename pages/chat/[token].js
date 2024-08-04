@@ -35,7 +35,7 @@ export default function Chat() {
       console.log("error", error.message);
       router.push("/"); // redirecting the user to the home page if an error occured
     }
-  }, [token, username]);
+  }, [token, username, router]);
   return (
     <div>
       {done !== "done" ? ( // Waiting for access to be granted
