@@ -11,31 +11,31 @@ export default function Chat() {
 
   const token = router.query.token; // Getting the token from the URL
   useEffect(() => {
-    if (!router.isReady) return console.log("Loading... Please wait"); // Checking if the token has been fetched from the URL.
+    if (!router.isReady) return console.log("Loading... Please wait");
     try {
-      const payload = jwt.verify(token, SECRET); // Verifying the token using the secret
+      const payload = jwt.verify(token, SECRET);
       async function fetchData() {
-        await fetch(`http://localhost:1337/api/accounts/${payload.id}`)
-          .then(async (e) => {
-            const account = await e.json();
-            setUsername(account.data.attributes.username);
-            if (token !== account.data.attributes.token) {
-              return router.push("/");
-            }
-            console.log(username);
-          })
-          .catch((e) => {
-            console.log(e.message);
+        const response = await fetch(`http://localhost:1337/api/accounts/${payload.id}`);
+        if (response.ok) {
+          const account = await response.json();
+          console.log(account);
+          setUsername(account.data.attributes.username);
+          if (token!== account.data.attributes.token) {
             return router.push("/");
-          });
+          }
+          console.log(username);
+        } else {
+          console.log(`Error: ${response.status} ${response.statusText}`);
+          return router.push("/");
+        }
       }
       fetchData();
-      setDone("done"); // granting access to the chat page
+      setDone("done");
     } catch (error) {
       console.log("error", error.message);
       router.push("/"); // redirecting the user to the home page if an error occured
     }
-  }, [token, username]); // Listens for a change in token
+  }, [token, username]);
   return (
     <div>
       {done !== "done" ? ( // Waiting for access to be granted

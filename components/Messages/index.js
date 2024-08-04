@@ -6,17 +6,16 @@ import styled from "styled-components";
 function Messages(props) {
   const { messages, username } = props;
   return (
-    <StyledMessages>
-      {messages.map((message, i) => (
-        <ScrollToBottom>
-          <div key={i}>
-            <Message message={message} username={username} />
-          </div>
-        </ScrollToBottom>
-      ))}
-    </StyledMessages>
+    <ScrollToBottom>
+      <StyledMessages>
+        {messages.map((message, i) => (
+          <Message key={i} message={message} username={username} />
+        ))}
+      </StyledMessages>
+    </ScrollToBottom>
   );
 }
+
 export default Messages;
 
 const StyledMessages = styled.div`

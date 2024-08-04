@@ -1,15 +1,13 @@
-export default function (req, res) {
-  const nodemailer = require("nodemailer");
-
+const nodemailer = require("nodemailer");
+export default async function mail(req, res) {
   const transporter = nodemailer.createTransport({
-    port: 465,
-    host: "smtp.gmail.com",
-    secure: "true",
+    host: 'smtp.ethereal.email',
+    port: 587,
     auth: {
-      user: "example@gmail.com",
-      pass: "password",
-    },
-  });
+        user: 'patsy83@ethereal.email',
+        pass: '2zTbVEs7yVu6WWTqdQ'
+    }
+});
 
   const mailData = {
     from: "Chat API",
@@ -17,11 +15,11 @@ export default function (req, res) {
     subject: `Verify your email`,
     text: req.body.message,
   };
-  transporter.sendMail(mailData, function (err, info) {
-    if (err) {
-      console.log(err);
-      return res.status(500).json({ message: `an error occurred ${err}` });
-    }
-    res.status(200).json({ message: info });
-  });
+
+  try {
+    const info = await transporter.sendMail(mailData);
+    res.status(200).json({ message: "Email sent successfully" });
+  } catch (err) {
+    res.status(500).json({ message: `An error occurred: ${err}` });
+  }
 }

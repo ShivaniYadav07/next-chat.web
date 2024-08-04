@@ -5,6 +5,7 @@ import "font-awesome/css/font-awesome.min.css";
 import Header from "./Header";
 import Messages from "./Messages";
 import List from "./List";
+import socket from "socket.io-client";
 import {
   ChatContainer,
   StyledContainer,
@@ -12,60 +13,75 @@ import {
   StyledButton,
   SendIcon,
 } from "../pages/chat/styles";
-
-function ChatRoom(props) {
-  const { username, room, joinData } = props; //Fetch from strapi
+function ChatRoom({ username, id }) {
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
   const [users, setUsers] = useState([]);
-
-  // useEffect(() => {
-  //   if (Object.keys(joinData).length > 0) {
-  //     setMessages([joinData]);
-
-  //     socket.on("message", (message, error) => {
-  //       setMessages((msgs) => [...msgs, message]);
-  //     });
-
-  //     socket.on("roomInfo", (users) => {
-  //       setUsers(users);
-  //     });
-  //   } else {
-  //     history.push("/join");
-  //   }
-  // }, [joinData]);
-
+  const io = socket("http://localhost:1337");//Connecting to Socket.io backend
+  let welcome;
+  useEffect(() => {
+    io.emit("join", { username }, (error) => { //Sending the username to the backend as the user connects.
+      if (error) return alert(error);
+    });
+    io.on("welcome", async (data, error) => {//Getting the welcome message from the backend
+      let welcomeMessage = {
+        user: data.user,
+        message: data.text,
+      };
+      welcome = welcomeMessage;
+      setMessages([welcomeMessage]);//Storing the Welcome Message
+      await fetch("http://localhost:1337/api/messages")//Fetching all messages from Strapi
+        .then(async (res) => {
+          const response = await res.json();
+          let arr = [welcome];
+          response.data.map((one, i) => {
+            arr = [...arr, one.attributes];
+            setMessages((msgs) => arr);// Storing all Messages in a state variable
+          });
+        })
+        .catch((e) => console.log(e.message));
+    });
+    io.on("message", async (data, error) => {//Listening for a message connection
+      await fetch("http://localhost:1337/api/messages")
+        .then(async (res) => {
+          const response = await res.json();
+          let arr = [welcome];
+          response.data.map((one, i) => {
+            arr = [...arr, one.attributes];
+            setMessages((msgs) => arr);
+          });
+        })
+        .catch((e) => console.log(e.message));
+    });
+    io.on("roomData", async (data) => {
+      await fetch("http://localhost:1337/api/active-users").then(async (e) => {
+        setUsers(await e.json());//Fetching and storing the users in the users state variable
+      });
+    })
+  }, [username]);
   const sendMessage = (message) => {
     if (message) {
-      socket.emit(
-        "sendMessage",
-        { userId: joinData.userData.id, message },
-        (error) => {
-          if (error) {
-            alert(error);
-            history.push("/join");
-          }
+      io.emit("sendMessage", { message, user: username }, (error) => {// Sending the message to the backend
+        if (error) {
+          alert(error);
         }
-      );
+      });
       setMessage("");
     } else {
-      alert("Message can't me empty");
+      alert("Message can't be empty");
     }
   };
-
   const handleChange = (e) => {
     setMessage(e.target.value);
   };
-
   const handleClick = () => {
     sendMessage(message);
   };
-
   return (
     <ChatContainer>
-      <Header room={room} />
+      <Header room="Group Chat" />
       <StyledContainer>
-        <List users={users.users} />
+        <List users={users} id={id} usersname={username}>
         <ChatBox>
           <Messages messages={messages} username={username} />
           <Input
@@ -80,9 +96,9 @@ function ChatRoom(props) {
             </SendIcon>
           </StyledButton>
         </ChatBox>
+        </List>
       </StyledContainer>
     </ChatContainer>
   );
 }
-
 export default ChatRoom;
